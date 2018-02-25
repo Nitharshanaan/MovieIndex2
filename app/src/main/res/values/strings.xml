@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">MovieIndex2</string>
+
+    <string name="sort_most_popular">popular</string>
+    <string name="sort_top_rated">top_rated</string>
+    <string name="sort_favorites">FAVORITES</string>
+</resources>
