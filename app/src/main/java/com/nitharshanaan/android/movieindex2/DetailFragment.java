@@ -54,7 +54,7 @@ public class DetailFragment extends Fragment {
         // Inflate the layout for this fragment
         View fragmentView = inflater.inflate(R.layout.fragment_detail, container, false);
         context = getContext();
-        listView = (RecyclerView) fragmentView.findViewById(R.id.detail_list);
+        listView = fragmentView.findViewById(R.id.detail_list);
 
         // check if movie is in favorites to get it from DB or fetch from internet:
         Cursor cursor = context.getContentResolver().query(Moviedb.MOVIES_URI.buildUpon().appendPath(Moviedb.ID).build(), null, null, null, null);
@@ -244,27 +244,4 @@ public class DetailFragment extends Fragment {
             progressDialog.dismiss();
         }
     }
-    /*********************************ListAdapter**************************************/
-    /*private class MovieAdapter extends BaseAdapter{
-
-        @Override
-        public int getCount() {
-            return 0;
-        }
-
-        @Override
-        public Object getItem(int i) {
-            return null;
-        }
-
-        @Override
-        public long getItemId(int i) {
-            return 0;
-        }
-
-        @Override
-        public View getView(int i, View view, ViewGroup viewGroup) {
-            return null;
-        }
-    }*/
 }

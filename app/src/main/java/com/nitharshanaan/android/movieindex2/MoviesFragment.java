@@ -9,9 +9,11 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,6 +37,8 @@ import java.net.URL;
 
 public class MoviesFragment extends Fragment {
 
+    private static final String TAG = MoviesFragment.class.getSimpleName();
+    static String BUNDLE_RECYCLER_LAYOUT = "recycler_layout";
     private RecyclerView gridView;
     private MoviesRecycleAdapter moviesRecycleAdapter;
     private Context context;
@@ -55,43 +59,59 @@ public class MoviesFragment extends Fragment {
         // Inflate the layout for this fragment
         View fragmentView = inflater.inflate(R.layout.fragment_movies, container, false);
         context = getContext();
-        gridView = (RecyclerView) fragmentView.findViewById(R.id.movies_grid);
+        gridView = fragmentView.findViewById(R.id.movies_grid);
+        gridView.setHasFixedSize(true);
+        layoutManager = new GridLayoutManager(context, 2);
+        gridView.setLayoutManager(layoutManager);
 
-        if (sortBy.equals("FAVORITES")) {
-            String[] projection = {Moviedb.ID_COLUMN, Moviedb.THUMB_COLUMN};
-            Cursor cursor = getContext().getContentResolver().query(Moviedb.MOVIES_URI, projection, null, null, null);
-            if (cursor != null) {
-                cursor.moveToFirst();
-                Moviedb.IDs = new String[cursor.getCount()];
-                Moviedb.THUMBs = new String[cursor.getCount()];
-                for (int i = 0; i < cursor.getCount(); i++) {
-                    Moviedb.IDs[i] = cursor.getString(cursor.getColumnIndex(Moviedb.ID_COLUMN));
-                    Moviedb.THUMBs[i] = cursor.getString(cursor.getColumnIndex(Moviedb.THUMB_COLUMN));
-                    cursor.moveToNext();
-                }
-                initializeGridAdapter();
-            }
+        if (savedInstanceState != null) {
+            Parcelable savedRecyclerViewState = savedInstanceState.getParcelable(BUNDLE_RECYCLER_LAYOUT);
+            gridView.getLayoutManager().onRestoreInstanceState(savedRecyclerViewState);
+            moviesRecycleAdapter = new MoviesRecycleAdapter(context, getActivity().getSupportFragmentManager());
+            gridView.setAdapter(moviesRecycleAdapter);
         } else {
-            ConnectivityManager connMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+            Log.i(TAG, "Nithu inside 1");
+            if (sortBy.equals("FAVORITES")) {
+                Log.i(TAG, "Nithu Fav");
+                String[] projection = {Moviedb.ID_COLUMN, Moviedb.THUMB_COLUMN};
+                Cursor cursor = getContext().getContentResolver().query(Moviedb.MOVIES_URI, projection, null, null, null);
+                if (cursor != null) {
+                    cursor.moveToFirst();
+                    Moviedb.IDs = new String[cursor.getCount()];
+                    Moviedb.THUMBs = new String[cursor.getCount()];
+                    for (int i = 0; i < cursor.getCount(); i++) {
+                        Moviedb.IDs[i] = cursor.getString(cursor.getColumnIndex(Moviedb.ID_COLUMN));
+                        Moviedb.THUMBs[i] = cursor.getString(cursor.getColumnIndex(Moviedb.THUMB_COLUMN));
+                        cursor.moveToNext();
+                    }
+                    initializeGridAdapter();
+                }
+            } else {
+                Log.i(TAG, "Nithu connection");
+                ConnectivityManager connMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+                NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
 
-            if (networkInfo != null && networkInfo.isConnected()) {
-                moviesTask = new MoviesTask();
-                moviesTask.execute(sortBy);
+                if (networkInfo != null && networkInfo.isConnected()) {
+                    moviesTask = new MoviesTask();
+                    moviesTask.execute(sortBy);
+                }
+                //if there is no internet connection
+                else Toast.makeText(context, "No Network Connection", Toast.LENGTH_SHORT).show();
             }
-            //if there is no internet connection
-            else Toast.makeText(context, "No Network Connection", Toast.LENGTH_SHORT).show();
         }
         return fragmentView;
     }
 
     private void initializeGridAdapter() {
         moviesRecycleAdapter = new MoviesRecycleAdapter(context, getActivity().getSupportFragmentManager());
-        gridView.setHasFixedSize(true);
-        layoutManager = new GridLayoutManager(context, 2);
-        gridView.setLayoutManager(layoutManager);
         //inflate grid from adapter:
         gridView.setAdapter(moviesRecycleAdapter);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(BUNDLE_RECYCLER_LAYOUT, gridView.getLayoutManager().onSaveInstanceState());
     }
 
     private class MoviesTask extends AsyncTask<String, Void, String> {
@@ -141,8 +161,10 @@ public class MoviesFragment extends Fragment {
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();
+                return null;
             } catch (IOException e) {
                 e.printStackTrace();
+                return null;
             } finally {
                 if (httpURLConnection != null) {
                     httpURLConnection.disconnect();
@@ -160,24 +182,26 @@ public class MoviesFragment extends Fragment {
 
         @Override
         protected void onPostExecute(String result) {
+            progressDialog.dismiss();
+            if (null == result) {
+                Toast.makeText(context, "invalid URL", Toast.LENGTH_SHORT).show();
+            } else {
+                try {
+                    //Read JSON file:
+                    JSONObject jsonObject = new JSONObject(result);
+                    JSONArray jsonArray = jsonObject.getJSONArray("results");
+                    Moviedb.IDs = new String[jsonArray.length()];
+                    Moviedb.THUMBs = new String[jsonArray.length()];
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        Moviedb.IDs[i] = jsonArray.getJSONObject(i).getString("id");
+                        Moviedb.THUMBs[i] = jsonArray.getJSONObject(i).getString("poster_path");
+                    }
+                    initializeGridAdapter();
 
-            try {
-                //Read JSON file:
-                JSONObject jsonObject = new JSONObject(result);
-                JSONArray jsonArray = jsonObject.getJSONArray("results");
-                Moviedb.IDs = new String[jsonArray.length()];
-                Moviedb.THUMBs = new String[jsonArray.length()];
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    Moviedb.IDs[i] = jsonArray.getJSONObject(i).getString("id");
-                    Moviedb.THUMBs[i] = jsonArray.getJSONObject(i).getString("poster_path");
+                } catch (JSONException e) {
                 }
-
-                initializeGridAdapter();
-                progressDialog.dismiss();
-
-            } catch (JSONException e) {
             }
-
         }
     }
+
 }
