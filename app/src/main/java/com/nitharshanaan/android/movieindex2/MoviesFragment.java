@@ -9,11 +9,9 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,7 +36,6 @@ import java.net.URL;
 public class MoviesFragment extends Fragment {
 
     private static final String TAG = MoviesFragment.class.getSimpleName();
-    static String BUNDLE_RECYCLER_LAYOUT = "recycler_layout";
     private RecyclerView gridView;
     private MoviesRecycleAdapter moviesRecycleAdapter;
     private Context context;
@@ -64,15 +61,8 @@ public class MoviesFragment extends Fragment {
         layoutManager = new GridLayoutManager(context, 2);
         gridView.setLayoutManager(layoutManager);
 
-        if (savedInstanceState != null) {
-            Parcelable savedRecyclerViewState = savedInstanceState.getParcelable(BUNDLE_RECYCLER_LAYOUT);
-            gridView.getLayoutManager().onRestoreInstanceState(savedRecyclerViewState);
-            moviesRecycleAdapter = new MoviesRecycleAdapter(context, getActivity().getSupportFragmentManager());
-            gridView.setAdapter(moviesRecycleAdapter);
-        } else {
-            Log.i(TAG, "Nithu inside 1");
+        {
             if (sortBy.equals("FAVORITES")) {
-                Log.i(TAG, "Nithu Fav");
                 String[] projection = {Moviedb.ID_COLUMN, Moviedb.THUMB_COLUMN};
                 Cursor cursor = getContext().getContentResolver().query(Moviedb.MOVIES_URI, projection, null, null, null);
                 if (cursor != null) {
@@ -87,7 +77,6 @@ public class MoviesFragment extends Fragment {
                     initializeGridAdapter();
                 }
             } else {
-                Log.i(TAG, "Nithu connection");
                 ConnectivityManager connMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
                 NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
 
@@ -108,12 +97,6 @@ public class MoviesFragment extends Fragment {
         gridView.setAdapter(moviesRecycleAdapter);
     }
 
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putParcelable(BUNDLE_RECYCLER_LAYOUT, gridView.getLayoutManager().onSaveInstanceState());
-    }
-
     private class MoviesTask extends AsyncTask<String, Void, String> {
 
         private HttpURLConnection httpURLConnection;
@@ -131,7 +114,6 @@ public class MoviesFragment extends Fragment {
 
         @Override
         protected String doInBackground(String... params) {
-
             try {
                 // params is to know how to sort data
                 Uri uri = Uri.parse(Moviedb.getMoviesUrl(params[0]));
@@ -203,5 +185,4 @@ public class MoviesFragment extends Fragment {
             }
         }
     }
-
 }

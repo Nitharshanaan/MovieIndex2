@@ -38,7 +38,7 @@ public class MovieDetailRecycleAdapter extends RecyclerView.Adapter<RecyclerView
         this.names = names;
         this.authors = authors;
         this.contents = contents;
-        this.isFavorite = isFavorite;
+        MovieDetailRecycleAdapter.isFavorite = isFavorite;
     }
 
     private void saveMovieInFavorites() {
@@ -130,7 +130,7 @@ public class MovieDetailRecycleAdapter extends RecyclerView.Adapter<RecyclerView
                         .tag(context)
                         .into(((DetailHolder) holder).posterImg);
                 // favorite FAB listener:
-                ((DetailHolder) holder).fab.setOnClickListener(new View.OnClickListener() {
+                DetailHolder.fab.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
                         saveMovieInFavorites();
@@ -179,13 +179,13 @@ public class MovieDetailRecycleAdapter extends RecyclerView.Adapter<RecyclerView
 
         public DetailHolder(View v) {
             super(v);
-            posterImg = (ImageView) v.findViewById(R.id.movie_image);
-            titleTxt = (TextView) v.findViewById(R.id.movie_name);
-            descriptionTxt = (TextView) v.findViewById(R.id.movie_description);
-            dateTxt = (TextView) v.findViewById(R.id.movie_year);
-            rateBar = (RatingBar) v.findViewById(R.id.movie_rate);
-            durationTxt = (TextView) v.findViewById(R.id.movie_duration);
-            fab = (FloatingActionButton) v.findViewById(R.id.favorite_fab);
+            posterImg = v.findViewById(R.id.movie_image);
+            titleTxt = v.findViewById(R.id.movie_name);
+            descriptionTxt = v.findViewById(R.id.movie_description);
+            dateTxt = v.findViewById(R.id.movie_year);
+            rateBar = v.findViewById(R.id.movie_rate);
+            durationTxt = v.findViewById(R.id.movie_duration);
+            fab = v.findViewById(R.id.favorite_fab);
             if (isFavorite) {
                 fab.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_favorite_white_48dp));
             }
@@ -200,7 +200,7 @@ public class MovieDetailRecycleAdapter extends RecyclerView.Adapter<RecyclerView
 
         public TrailerHolder(View v) {
             super(v);
-            trailerTxt = (TextView) v.findViewById(R.id.trailer);
+            trailerTxt = v.findViewById(R.id.trailer);
             v.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -217,8 +217,8 @@ public class MovieDetailRecycleAdapter extends RecyclerView.Adapter<RecyclerView
 
         public ReviewHolder(View v) {
             super(v);
-            authorTxt = (TextView) v.findViewById(R.id.review_author);
-            contentTxt = (TextView) v.findViewById(R.id.review_content);
+            authorTxt = v.findViewById(R.id.review_author);
+            contentTxt = v.findViewById(R.id.review_content);
 
         }
     }
@@ -236,29 +236,4 @@ public class MovieDetailRecycleAdapter extends RecyclerView.Adapter<RecyclerView
             super(v);
         }
     }
-/*
-    private class ListDivider extends RecyclerView.ItemDecoration{
-
-        View view = LayoutInflater.from(context).inflate(R.layout.movie_review_divider, null);
-
-        @Override
-        public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
-            // this method only make a space available to draw the divider on it later in the right position
-            if(parent.getChildAdapterPosition(view) == keys.length+1)
-                outRect.set(0,this.view.getMeasuredHeight(),0,0);
-        }
-
-        @Override
-        public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
-            //draw the divider itself in the room we get from above method, we must go to its location first
-            view.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            view.setPadding(0,parent.getChildAt(0).getMeasuredHeight(),0,0);
-            view.draw(c);
-            //c.drawColor(context.getResources().getColor(R.color.Blue));
-        }
-    }
-
-    public ListDivider createListDividerInstance(){
-        return new ListDivider();
-    }*/
 }

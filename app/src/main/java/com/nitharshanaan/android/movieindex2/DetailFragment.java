@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -37,6 +38,14 @@ import java.util.Map;
  */
 public class DetailFragment extends Fragment {
 
+    private static final String TAG = DetailFragment.class.getSimpleName();
+    private static final String BUNDLE_KEYS = "bundle_keys";
+    private static final String BUNDLE_NAMES = "bundle_names";
+    private static final String BUNDLE_AUTHORS = "bundle_authors";
+    private static final String BUNDLE_CONTENTS = "bundle_contents";
+    private static final String BUNDLE_ISFAVORITE = "bundle_isfavorite";
+    private static final String BUNDLE_DETAILS = "bundle_details";
+    private static String BUNDLE_LIST_LAYOUT = "list_layout";
     private RecyclerView listView;
     private Context context;
     private MovieDetailTask movieDetailTask;
@@ -55,73 +64,92 @@ public class DetailFragment extends Fragment {
         View fragmentView = inflater.inflate(R.layout.fragment_detail, container, false);
         context = getContext();
         listView = fragmentView.findViewById(R.id.detail_list);
+        listView.setHasFixedSize(true);
 
-        // check if movie is in favorites to get it from DB or fetch from internet:
-        Cursor cursor = context.getContentResolver().query(Moviedb.MOVIES_URI.buildUpon().appendPath(Moviedb.ID).build(), null, null, null, null);
-        if (cursor.getCount() > 0) {
-            //movie is saved
-            isFavorite = true;
-            cursor.moveToFirst();
-            // get basic info:
-            details.put(Moviedb.THUMB_COLUMN, cursor.getString(cursor.getColumnIndex(Moviedb.THUMB_COLUMN)));
-            details.put(Moviedb.TITLE_COLUMN, cursor.getString(cursor.getColumnIndex(Moviedb.TITLE_COLUMN)));
-            details.put(Moviedb.DESCRIPTION_COLUMN, cursor.getString(cursor.getColumnIndex(Moviedb.DESCRIPTION_COLUMN)));
-            details.put(Moviedb.DATE_COLUMN, cursor.getString(cursor.getColumnIndex(Moviedb.DATE_COLUMN)));
-            details.put(Moviedb.VOTE_COLUMN, cursor.getString(cursor.getColumnIndex(Moviedb.VOTE_COLUMN)));
-            details.put(Moviedb.DURATION_COLUMN, cursor.getString(cursor.getColumnIndex(Moviedb.DURATION_COLUMN)));
-            cursor.close();
-            // get trailers:
-            cursor = context.getContentResolver().query(Moviedb.TRAILERS_URI.buildUpon().appendPath(Moviedb.ID).build(), null, null, null, null);
-            if (cursor != null) {
-                cursor.moveToFirst();
-                keys = new String[cursor.getCount()];
-                names = new String[cursor.getCount()];
-                for (int i = 0; i < cursor.getCount(); i++) {
-                    keys[i] = cursor.getString(cursor.getColumnIndex(Moviedb.KEY_COLUMN));
-                    names[i] = cursor.getString(cursor.getColumnIndex(Moviedb.NAME_COLUMN));
-                    cursor.moveToNext();
-                }
-                Moviedb.TRAILER = keys[0];
-                cursor.close();
-            }
-            // get reviews:
-            cursor = context.getContentResolver().query(Moviedb.REVIEWS_URI.buildUpon().appendPath(Moviedb.ID).build(), null, null, null, null);
-            if (cursor != null) {
-                cursor.moveToFirst();
-                authors = new String[cursor.getCount()];
-                contents = new String[cursor.getCount()];
-                for (int i = 0; i < cursor.getCount(); i++) {
-                    authors[i] = cursor.getString(cursor.getColumnIndex(Moviedb.AUTHOR_COLUMN));
-                    contents[i] = cursor.getString(cursor.getColumnIndex(Moviedb.CONTENT_COLUMN));
-                    cursor.moveToNext();
-                }
-                cursor.close();
-            }
+        if (savedInstanceState != null) {
+            keys = savedInstanceState.getStringArray(BUNDLE_KEYS);
+            names = savedInstanceState.getStringArray(BUNDLE_NAMES);
+            authors = savedInstanceState.getStringArray(BUNDLE_AUTHORS);
+            contents = savedInstanceState.getStringArray(BUNDLE_CONTENTS);
+            isFavorite = savedInstanceState.getBoolean(BUNDLE_ISFAVORITE);
+            details = (Map<String, String>) savedInstanceState.getSerializable(BUNDLE_DETAILS);
             callRecycleAdapter();
+
         } else {
+            // check if movie is in favorites to get it from DB or fetch from internet:
+            Cursor cursor = context.getContentResolver().query(Moviedb.MOVIES_URI.buildUpon().appendPath(Moviedb.ID).build(), null, null, null, null);
+            if (cursor.getCount() > 0) {
+                //movie is saved
+                isFavorite = true;
+                cursor.moveToFirst();
+                // get basic info:
+                details.put(Moviedb.THUMB_COLUMN, cursor.getString(cursor.getColumnIndex(Moviedb.THUMB_COLUMN)));
+                details.put(Moviedb.TITLE_COLUMN, cursor.getString(cursor.getColumnIndex(Moviedb.TITLE_COLUMN)));
+                details.put(Moviedb.DESCRIPTION_COLUMN, cursor.getString(cursor.getColumnIndex(Moviedb.DESCRIPTION_COLUMN)));
+                details.put(Moviedb.DATE_COLUMN, cursor.getString(cursor.getColumnIndex(Moviedb.DATE_COLUMN)));
+                details.put(Moviedb.VOTE_COLUMN, cursor.getString(cursor.getColumnIndex(Moviedb.VOTE_COLUMN)));
+                details.put(Moviedb.DURATION_COLUMN, cursor.getString(cursor.getColumnIndex(Moviedb.DURATION_COLUMN)));
+                cursor.close();
+                // get trailers:
+                cursor = context.getContentResolver().query(Moviedb.TRAILERS_URI.buildUpon().appendPath(Moviedb.ID).build(), null, null, null, null);
+                if (cursor != null) {
+                    cursor.moveToFirst();
+                    keys = new String[cursor.getCount()];
+                    names = new String[cursor.getCount()];
+                    for (int i = 0; i < cursor.getCount(); i++) {
+                        keys[i] = cursor.getString(cursor.getColumnIndex(Moviedb.KEY_COLUMN));
+                        names[i] = cursor.getString(cursor.getColumnIndex(Moviedb.NAME_COLUMN));
+                        cursor.moveToNext();
+                    }
+                    Moviedb.TRAILER = keys[0];
+                    cursor.close();
+                }
+                // get reviews:
+                cursor = context.getContentResolver().query(Moviedb.REVIEWS_URI.buildUpon().appendPath(Moviedb.ID).build(), null, null, null, null);
+                if (cursor != null) {
+                    cursor.moveToFirst();
+                    authors = new String[cursor.getCount()];
+                    contents = new String[cursor.getCount()];
+                    for (int i = 0; i < cursor.getCount(); i++) {
+                        authors[i] = cursor.getString(cursor.getColumnIndex(Moviedb.AUTHOR_COLUMN));
+                        contents[i] = cursor.getString(cursor.getColumnIndex(Moviedb.CONTENT_COLUMN));
+                        cursor.moveToNext();
+                    }
+                    cursor.close();
+                }
+                callRecycleAdapter();
+            } else {
+                ConnectivityManager connMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+                NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
 
-            ConnectivityManager connMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-
-            if (networkInfo != null && networkInfo.isConnected()) {
-                movieDetailTask = new MovieDetailTask();
-                movieDetailTask.execute();
+                if (networkInfo != null && networkInfo.isConnected()) {
+                    movieDetailTask = new MovieDetailTask();
+                    movieDetailTask.execute();
+                }
+                //if there is no internet connection
+                else Toast.makeText(context, "No Network Connection", Toast.LENGTH_SHORT).show();
             }
-            //if there is no internet connection
-            else Toast.makeText(context, "No Network Connection", Toast.LENGTH_SHORT).show();
-
         }
         return fragmentView;
     }
 
     void callRecycleAdapter() {
-
         movieDetailRecycleAdapter = new MovieDetailRecycleAdapter(context, details, keys, names, authors, contents, isFavorite);
         layoutManager = new LinearLayoutManager(context);
-        listView.setHasFixedSize(true);
         listView.setLayoutManager(layoutManager);
         //listView.addItemDecoration(movieDetailRecycleAdapter.createListDividerInstance());
         listView.setAdapter(movieDetailRecycleAdapter);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putSerializable(BUNDLE_DETAILS, (Serializable) details);
+        outState.putStringArray(BUNDLE_KEYS, keys);
+        outState.putStringArray(BUNDLE_NAMES, names);
+        outState.putStringArray(BUNDLE_AUTHORS, authors);
+        outState.putStringArray(BUNDLE_CONTENTS, contents);
+        outState.putBoolean(BUNDLE_ISFAVORITE, isFavorite);
     }
 
     private class MovieDetailTask extends AsyncTask<Void, Void, String> {
@@ -239,7 +267,6 @@ public class DetailFragment extends Fragment {
 
             } catch (JSONException e) {
             }
-
             callRecycleAdapter();
             progressDialog.dismiss();
         }
