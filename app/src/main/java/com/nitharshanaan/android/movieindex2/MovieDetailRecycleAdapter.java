@@ -1,5 +1,6 @@
 package com.nitharshanaan.android.movieindex2;
 
+import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -205,7 +206,13 @@ public class MovieDetailRecycleAdapter extends RecyclerView.Adapter<RecyclerView
                 @Override
                 public void onClick(View view) {
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=" + key));
-                    context.startActivity(intent);
+                    Intent webIntent = new Intent(Intent.ACTION_VIEW,
+                            Uri.parse("http://www.youtube.com/watch?v=" + key));
+                    try {
+                        context.startActivity(intent);
+                    } catch (ActivityNotFoundException ex) {
+                        context.startActivity(webIntent);
+                    }
                 }
             });
         }
